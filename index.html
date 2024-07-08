@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Mandelbrot Set</title>
+		<style>
+			body,
+			html {
+				margin: 0;
+				overflow: hidden;
+			}
+			canvas {
+				display: block;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="mandelbrotCanvas"></canvas>
+		<script>
+			const canvas = document.getElementById('mandelbrotCanvas');
+			const ctx = canvas.getContext('2d');
+			let width, height;
+			let minReal = -2.5,
+				maxReal = 1.5;
+			let minImag = -1.5,
+				maxImag = 1.5;
+			const maxIterations = 100;
+			let animating = false;
+
+			function resizeCanvas() {
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+				width = canvas.width;
+				height = canvas.height;
+				drawMandelbrot();
+			}
+
+			function drawMandelbrot() {
+				const imageData = ctx.createImageData(width, height);
+				const data = imageData.data;
+				const realFactor = (maxReal - minReal) / (width - 1);
+				const imagFactor = (maxImag - minImag) / (height - 1);
+
+				for (let y = 0; y < height; y++) {
+					const cImag = maxImag - y * imagFactor;
+					for (let x = 0; x < width; x++) {
+						const cReal = minReal + x * realFactor;
+						let zReal = cReal,
+							zImag = cImag;
+						let isInside = true;
+						let n;
+						for (n = 0; n < maxIterations; n++) {
+							const zReal2 = zReal * zReal,
+								zImag2 = zImag * zImag;
+							if (zReal2 + zImag2 > 4) {
+								isInside = false;
+								break;
+							}
+							zImag = 2 * zReal * zImag + cImag;
+							zReal = zReal2 - zImag2 + cReal;
+						}
+
+						const index = (y * width + x) * 4;
+						const color = isInside
+							? 0
+							: 255 - Math.floor((n * 255) / maxIterations);
+						data[index] = color; // Red
+						data[index + 1] = color; // Green
+						data[index + 2] = color; // Blue
+						data[index + 3] = 255; // Alpha
+					}
+				}
+				ctx.putImageData(imageData, 0, 0);
+			}
+
+			function zoom(factor, mouseX, mouseY) {
+				const realRange = (maxReal - minReal) * factor;
+				const imagRange = (maxImag - minImag) * factor;
+
+				const realMouse = minReal + (mouseX / width) * (maxReal - minReal);
+				const imagMouse = maxImag - (mouseY / height) * (maxImag - minImag);
+
+				const realCenter = realMouse;
+				const imagCenter = imagMouse;
+
+				minReal = realCenter - (realCenter - minReal) * factor;
+				maxReal = realCenter + (maxReal - realCenter) * factor;
+				minImag = imagCenter - (imagCenter - minImag) * factor;
+				maxImag = imagCenter + (maxImag - imagCenter) * factor;
+
+				drawMandelbrot();
+			}
+
+			function animatePointPath(cReal, cImag) {
+				if (animating) return;
+				animating = true;
+				let zReal = cReal,
+					zImag = cImag;
+				ctx.strokeStyle = 'red';
+				ctx.lineWidth = 2;
+				ctx.beginPath();
+				ctx.moveTo(
+					((cReal - minReal) / (maxReal - minReal)) * width,
+					((maxImag - cImag) / (maxImag - minImag)) * height
+				);
+
+				function step(iteration) {
+					if (iteration > maxIterations) {
+						animating = false;
+						return;
+					}
+					const zReal2 = zReal * zReal;
+					const zImag2 = zImag * zImag;
+					if (zReal2 + zImag2 > 4) {
+						animating = false;
+						return;
+					}
+					const newZImag = 2 * zReal * zImag + cImag;
+					zReal = zReal2 - zImag2 + cReal;
+					zImag = newZImag;
+
+					const x = ((zReal - minReal) / (maxReal - minReal)) * width;
+					const y = ((maxImag - zImag) / (maxImag - minImag)) * height;
+					ctx.lineTo(x, y);
+					ctx.stroke();
+
+					requestAnimationFrame(() => step(iteration + 1));
+				}
+
+				step(0);
+			}
+
+			window.addEventListener('resize', resizeCanvas);
+			window.addEventListener('wheel', (event) => {
+				event.preventDefault();
+				const zoomFactor = event.deltaY > 0 ? 1.1 : 0.9;
+				const rect = canvas.getBoundingClientRect();
+				const mouseX = event.clientX - rect.left;
+				const mouseY = event.clientY - rect.top;
+				zoom(zoomFactor, mouseX, mouseY);
+			});
+
+			canvas.addEventListener('click', (event) => {
+				drawMandelbrot();
+				const rect = canvas.getBoundingClientRect();
+				const mouseX = event.clientX - rect.left;
+				const mouseY = event.clientY - rect.top;
+				const cReal = minReal + (mouseX / width) * (maxReal - minReal);
+				const cImag = maxImag - (mouseY / height) * (maxImag - minImag);
+				animatePointPath(cReal, cImag);
+			});
+
+			resizeCanvas();
+		</script>
+	</body>
+	non
+</html>
