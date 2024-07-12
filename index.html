@@ -25,8 +25,8 @@
 				maxReal = 1.5;
 			let minImag = -1.5,
 				maxImag = 1.5;
-			const maxIterations = 100;
-			let animating = false;
+			const maxIterations = 80;
+			let isAnimating = false;
 
 			function resizeCanvas() {
 				canvas.width = window.innerWidth;
@@ -93,8 +93,8 @@
 			}
 
 			function animatePointPath(cReal, cImag) {
-				if (animating) return;
-				animating = true;
+				if (isAnimating) return;
+				isAnimating = true;
 				let zReal = cReal,
 					zImag = cImag;
 				ctx.strokeStyle = 'red';
@@ -107,13 +107,13 @@
 
 				function step(iteration) {
 					if (iteration > maxIterations) {
-						animating = false;
+						isAnimating = false;
 						return;
 					}
 					const zReal2 = zReal * zReal;
 					const zImag2 = zImag * zImag;
 					if (zReal2 + zImag2 > 4) {
-						animating = false;
+						isAnimating = false;
 						return;
 					}
 					const newZImag = 2 * zReal * zImag + cImag;
@@ -134,7 +134,7 @@
 			window.addEventListener('resize', resizeCanvas);
 			window.addEventListener('wheel', (event) => {
 				event.preventDefault();
-				const zoomFactor = event.deltaY > 0 ? 1.1 : 0.9;
+				const zoomFactor = event.deltaY > 0 ? 1.12 : 0.88;
 				const rect = canvas.getBoundingClientRect();
 				const mouseX = event.clientX - rect.left;
 				const mouseY = event.clientY - rect.top;
